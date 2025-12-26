@@ -1,0 +1,146 @@
+local settings = UserSettings():GetService("UserGameSettings")
+local lighting = game:GetService("Lighting")
+local terrain = workspace.Terrain
+local players = game:GetService("Players")
+local localPlayer = players.LocalPlayer
+
+settings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
+settings.MasterVolume = 0
+
+sethiddenproperty(lighting, "Technology", Enum.Technology.Compatibility)
+lighting.GlobalShadows = false
+lighting.FogEnd = 9e9
+lighting.Brightness = 0
+lighting.EnvironmentSpecularScale = 0
+lighting.EnvironmentDiffuseScale = 0
+lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
+lighting.ClockTime = 12
+
+for _, v in pairs(lighting:GetChildren()) do
+    if v:IsA("PostEffect") then 
+        v.Enabled = false 
+    end
+end
+
+terrain.WaterWaveSize = 0
+terrain.WaterWaveSpeed = 0
+terrain.WaterReflectance = 0
+terrain.WaterTransparency = 0
+pcall(function() sethiddenproperty(terrain, "SmoothGrid", false) end)
+local function optimizeObject(obj)
+    local objType = obj.ClassName
+    
+    if objType == "ParticleEmitter" or objType == "Trail" or objType == "Smoke" or 
+       objType == "Fire" or objType == "Sparkles" or objType == "Beam" then
+        obj.Enabled = false
+        return
+    end
+    
+    if objType == "Explosion" then
+        obj:Destroy()
+        return
+    end
+    
+    if objType == "Sound" or objType == "SoundGroup" then
+        obj.Volume = 0
+        return
+    end
+    
+    if obj:IsA("BasePart") then
+        obj.CastShadow = false
+        obj.Material = Enum.Material.SmoothPlastic
+        obj.Reflectance = 0
+        return
+    end
+    
+    if objType == "Decal" or objType == "Texture" then
+        obj.Transparency = 1
+        return
+    end
+    
+    if objType == "PointLight" or objType == "SpotLight" or objType == "SurfaceLight" then
+        obj.Enabled = false
+        return
+    end
+    
+    if objType == "Humanoid" then
+        obj.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
+        return
+    end
+    
+    if objType == "Sky" or objType == "Atmosphere" or objType == "Clouds" then
+        obj:Destroy()
+        return
+    end
+end
+local function hidePlayer(character)
+    task.wait(0.1)
+    for _, part in pairs(character:GetDescendants()) do
+        if part:IsA("BasePart") or part:IsA("Decal") then
+            part.Transparency = 1
+        end
+    end
+end
+
+for _, obj in pairs(workspace:GetDescendants()) do
+    task.spawn(optimizeObject, obj)
+end
+
+workspace.DescendantAdded:Connect(function(obj)
+    task.defer(optimizeObject, obj)
+end)
+
+for _, player in pairs(players:GetPlayers()) do
+    if player ~= localPlayer and player.Character then
+        task.spawn(hidePlayer, player.Character)
+    end
+end
+
+players.PlayerAdded:Connect(function(player)
+    if player == localPlayer then return end
+    player.CharacterAdded:Connect(hidePlayer)
+end)
+local function optimizeLocalCharacter(char)
+    for _, v in pairs(char:GetDescendants()) do
+        if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or 
+           v:IsA("Pants") or v:IsA("ShirtGraphic") then
+            v:Destroy()
+        elseif v:IsA("BodyColors") then
+            local white = Color3.new(1, 1, 1)
+            v.HeadColor3 = white
+            v.TorsoColor3 = white
+            v.LeftArmColor3 = white
+            v.RightArmColor3 = white
+            v.LeftLegColor3 = white
+            v.RightLegColor3 = white
+        end
+    end
+end
+
+if localPlayer.Character then
+    optimizeLocalCharacter(localPlayer.Character)
+end
+
+localPlayer.CharacterAdded:Connect(optimizeLocalCharacter)
+
+local function optimizeGui(v)
+    if v:IsA("ImageLabel") or v:IsA("ImageButton") then
+        v.ImageTransparency = 1
+        v.Image = ""
+    elseif v:IsA("VideoFrame") then
+        v.Video = ""
+    end
+end
+
+for _, v in pairs(localPlayer.PlayerGui:GetDescendants()) do
+    optimizeGui(v)
+end
+
+localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
+    task.defer(optimizeGui, v)
+end)
+
+game:GetService("RunService"):Set3dRenderingEnabled(false)
+setfpscap(10)
+
+print("loaded 2")
