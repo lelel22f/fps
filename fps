@@ -141,6 +141,6 @@ localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
 end)
 
 game:GetService("RunService"):Set3dRenderingEnabled(false)
-setfpscap(10)
+setfpscap(15)
 
 print("loaded 2")
