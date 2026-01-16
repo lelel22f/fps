@@ -9,7 +9,10 @@ local soundService = game:GetService("SoundService")
 settings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
 settings.MasterVolume = 0
 
-sethiddenproperty(lighting, "Technology", Enum.Technology.Compatibility)
+pcall(function()
+    sethiddenproperty(lighting, "Technology", Enum.Technology.Compatibility)
+end)
+
 lighting.GlobalShadows = false
 lighting.FogEnd = 9e9
 lighting.Brightness = 0
@@ -18,9 +21,9 @@ lighting.EnvironmentDiffuseScale = 0
 lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
 lighting.ClockTime = 12
 
-for _, v in pairs(lighting:GetChildren()) do
-    if v:IsA("PostEffect") then 
-        v.Enabled = false 
+for _, v in ipairs(lighting:GetChildren()) do
+    if v:IsA("PostEffect") then
+        v.Enabled = false
     end
 end
 
@@ -28,67 +31,79 @@ terrain.WaterWaveSize = 0
 terrain.WaterWaveSpeed = 0
 terrain.WaterReflectance = 0
 terrain.WaterTransparency = 0
-pcall(function() sethiddenproperty(terrain, "SmoothGrid", false) end)
 
-pcall(function() 
-    workspace.StreamingMinRadius = 0 
-    workspace.StreamingTargetRadius = 0 
+pcall(function()
+    sethiddenproperty(terrain, "SmoothGrid", false)
 end)
 
-pcall(function() 
-    soundService.Volume = 0 
+pcall(function()
+    workspace.StreamingMinRadius = 0
+    workspace.StreamingTargetRadius = 0
 end)
 
-pcall(function() 
-    if workspace.CurrentCamera then 
-        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable 
-    end 
+pcall(function()
+    soundService.Volume = 0
+end)
+
+pcall(function()
+    local cam = workspace.CurrentCamera
+    if cam then
+        cam.CameraType = Enum.CameraType.Scriptable
+        cam.CFrame = CFrame.new(0, 9e9, 0)
+        cam.FieldOfView = 1
+    end
 end)
 
 local function optimizeObject(obj)
-    local objType = obj.ClassName
-    
-    if objType == "ParticleEmitter" or objType == "Trail" or objType == "Smoke" or 
-       objType == "Fire" or objType == "Sparkles" or objType == "Beam" then
+    local t = obj.ClassName
+
+    if t == "ParticleEmitter" or t == "Trail" or t == "Smoke" or t == "Fire" or t == "Sparkles" or t == "Beam" then
         obj.Enabled = false
         return
     end
-    
-    if objType == "Explosion" then
+
+    if t == "Explosion" then
         obj:Destroy()
         return
     end
-    
-    if objType == "Sound" or objType == "SoundGroup" then
+
+    if t == "Sound" or t == "SoundGroup" then
         obj.Volume = 0
         return
     end
-    
+
     if obj:IsA("BasePart") then
         obj.CastShadow = false
         obj.Material = Enum.Material.SmoothPlastic
         obj.Reflectance = 0
         return
     end
-    
-    if objType == "PointLight" or objType == "SpotLight" or objType == "SurfaceLight" then
+
+    if t == "PointLight" or t == "SpotLight" or t == "SurfaceLight" then
         obj.Enabled = false
         return
     end
-    
-    if objType == "Humanoid" then
+
+    if t == "Humanoid" then
         obj.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
         return
     end
-    
-    if objType == "Sky" or objType == "Atmosphere" or objType == "Clouds" then
+
+    if t == "Sky" or t == "Atmosphere" or t == "Clouds" then
         obj:Destroy()
         return
     end
 end
 
-for _, obj in pairs(workspace:GetDescendants()) do
-    task.spawn(optimizeObject, obj)
+do
+    local count = 0
+    for _, obj in ipairs(workspace:GetDescendants()) do
+        optimizeObject(obj)
+        count += 1
+        if count % 250 == 0 then
+            task.wait()
+        end
+    end
 end
 
 workspace.DescendantAdded:Connect(function(obj)
@@ -96,9 +111,8 @@ workspace.DescendantAdded:Connect(function(obj)
 end)
 
 local function optimizeLocalCharacter(char)
-    for _, v in pairs(char:GetDescendants()) do
-        if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or 
-           v:IsA("Pants") or v:IsA("ShirtGraphic") then
+    for _, v in ipairs(char:GetDescendants()) do
+        if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
             v:Destroy()
         end
     end
@@ -119,7 +133,7 @@ local function optimizeGui(v)
     end
 end
 
-for _, v in pairs(localPlayer.PlayerGui:GetDescendants()) do
+for _, v in ipairs(localPlayer.PlayerGui:GetDescendants()) do
     optimizeGui(v)
 end
 
@@ -127,10 +141,6 @@ localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
     task.defer(optimizeGui, v)
 end)
 
-pcall(function() 
-    runService:Set3dRenderingEnabled(false) 
-end)
-
-setfpscap(15)
+setfpscap(20)
 
 print("loaded 2")
