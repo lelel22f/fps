@@ -3,6 +3,8 @@ local lighting = game:GetService("Lighting")
 local terrain = workspace.Terrain
 local players = game:GetService("Players")
 local localPlayer = players.LocalPlayer
+local runService = game:GetService("RunService")
+local soundService = game:GetService("SoundService")
 
 settings.SavedQualityLevel = Enum.SavedQualitySetting.QualityLevel1
 settings.MasterVolume = 0
@@ -27,6 +29,22 @@ terrain.WaterWaveSpeed = 0
 terrain.WaterReflectance = 0
 terrain.WaterTransparency = 0
 pcall(function() sethiddenproperty(terrain, "SmoothGrid", false) end)
+
+pcall(function() 
+    workspace.StreamingMinRadius = 0 
+    workspace.StreamingTargetRadius = 0 
+end)
+
+pcall(function() 
+    soundService.Volume = 0 
+end)
+
+pcall(function() 
+    if workspace.CurrentCamera then 
+        workspace.CurrentCamera.CameraType = Enum.CameraType.Scriptable 
+    end 
+end)
+
 local function optimizeObject(obj)
     local objType = obj.ClassName
     
@@ -53,11 +71,6 @@ local function optimizeObject(obj)
         return
     end
     
-    if objType == "Decal" or objType == "Texture" then
-        obj.Transparency = 1
-        return
-    end
-    
     if objType == "PointLight" or objType == "SpotLight" or objType == "SurfaceLight" then
         obj.Enabled = false
         return
@@ -73,14 +86,6 @@ local function optimizeObject(obj)
         return
     end
 end
-local function hidePlayer(character)
-    task.wait(0.1)
-    for _, part in pairs(character:GetDescendants()) do
-        if part:IsA("BasePart") or part:IsA("Decal") then
-            part.Transparency = 1
-        end
-    end
-end
 
 for _, obj in pairs(workspace:GetDescendants()) do
     task.spawn(optimizeObject, obj)
@@ -90,29 +95,11 @@ workspace.DescendantAdded:Connect(function(obj)
     task.defer(optimizeObject, obj)
 end)
 
-for _, player in pairs(players:GetPlayers()) do
-    if player ~= localPlayer and player.Character then
-        task.spawn(hidePlayer, player.Character)
-    end
-end
-
-players.PlayerAdded:Connect(function(player)
-    if player == localPlayer then return end
-    player.CharacterAdded:Connect(hidePlayer)
-end)
 local function optimizeLocalCharacter(char)
     for _, v in pairs(char:GetDescendants()) do
         if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or 
            v:IsA("Pants") or v:IsA("ShirtGraphic") then
             v:Destroy()
-        elseif v:IsA("BodyColors") then
-            local white = Color3.new(1, 1, 1)
-            v.HeadColor3 = white
-            v.TorsoColor3 = white
-            v.LeftArmColor3 = white
-            v.RightArmColor3 = white
-            v.LeftLegColor3 = white
-            v.RightLegColor3 = white
         end
     end
 end
@@ -140,7 +127,10 @@ localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
     task.defer(optimizeGui, v)
 end)
 
-game:GetService("RunService"):Set3dRenderingEnabled(false)
+pcall(function() 
+    runService:Set3dRenderingEnabled(false) 
+end)
+
 setfpscap(15)
 
 print("loaded 2")
