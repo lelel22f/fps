@@ -22,8 +22,8 @@ lighting.OutdoorAmbient = Color3.new(0.5, 0.5, 0.5)
 lighting.ClockTime = 12
 
 for _, v in ipairs(lighting:GetChildren()) do
-    if v:IsA("PostEffect") then
-        v.Enabled = false
+    if v:IsA("PostEffect") or v:IsA("Sky") or v:IsA("Atmosphere") or v:IsA("Clouds") then
+        v:Destroy()
     end
 end
 
@@ -43,6 +43,29 @@ end)
 
 pcall(function()
     soundService.Volume = 0
+    soundService.AmbientReverb = Enum.ReverbType.NoReverb
+end)
+
+task.spawn(function()
+    local mapFolder = workspace:FindFirstChild("Map")
+    if mapFolder then
+        mapFolder:Destroy()
+    end
+    
+    local platform = Instance.new("Part")
+    platform.Name = "SafePlatform"
+    platform.Size = Vector3.new(2048, 1, 2048)
+    platform.Position = Vector3.new(0, -10, 0)
+    platform.Anchored = true
+    platform.Transparency = 1
+    platform.CanCollide = true
+    platform.Material = Enum.Material.SmoothPlastic
+    platform.CastShadow = false
+    platform.Parent = workspace
+end)
+
+pcall(function()
+    runService:Set3dRenderingEnabled(false)
 end)
 
 pcall(function()
@@ -57,18 +80,14 @@ end)
 local function optimizeObject(obj)
     local t = obj.ClassName
 
-    if t == "ParticleEmitter" or t == "Trail" or t == "Smoke" or t == "Fire" or t == "Sparkles" or t == "Beam" then
-        obj.Enabled = false
-        return
-    end
-
-    if t == "Explosion" then
+    if t == "ParticleEmitter" or t == "Trail" or t == "Smoke" or t == "Fire" 
+        or t == "Sparkles" or t == "Beam" or t == "Explosion" then
         obj:Destroy()
         return
     end
 
     if t == "Sound" or t == "SoundGroup" then
-        obj.Volume = 0
+        obj:Destroy()
         return
     end
 
@@ -76,11 +95,14 @@ local function optimizeObject(obj)
         obj.CastShadow = false
         obj.Material = Enum.Material.SmoothPlastic
         obj.Reflectance = 0
+        pcall(function()
+            obj.CollisionFidelity = Enum.CollisionFidelity.Box
+        end)
         return
     end
 
     if t == "PointLight" or t == "SpotLight" or t == "SurfaceLight" then
-        obj.Enabled = false
+        obj:Destroy()
         return
     end
 
@@ -89,33 +111,43 @@ local function optimizeObject(obj)
         return
     end
 
-    if t == "Sky" or t == "Atmosphere" or t == "Clouds" then
+    if t == "Decal" or t == "Texture" then
         obj:Destroy()
         return
     end
 end
 
-do
+task.spawn(function()
     local count = 0
     for _, obj in ipairs(workspace:GetDescendants()) do
-        optimizeObject(obj)
+        pcall(function()
+            optimizeObject(obj)
+        end)
         count += 1
-        if count % 250 == 0 then
+        if count % 100 == 0 then
             task.wait()
         end
     end
-end
+end)
 
 workspace.DescendantAdded:Connect(function(obj)
-    task.defer(optimizeObject, obj)
+    task.defer(function()
+        pcall(function()
+            optimizeObject(obj)
+        end)
+    end)
 end)
 
 local function optimizeLocalCharacter(char)
-    for _, v in ipairs(char:GetDescendants()) do
-        if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") or v:IsA("Pants") or v:IsA("ShirtGraphic") then
-            v:Destroy()
+    task.spawn(function()
+        for _, v in ipairs(char:GetDescendants()) do
+            if v:IsA("Accessory") or v:IsA("Hat") or v:IsA("Shirt") 
+                or v:IsA("Pants") or v:IsA("ShirtGraphic") 
+                or v:IsA("CharacterMesh") or v:IsA("BodyColors") then
+                v:Destroy()
+            end
         end
-    end
+    end)
 end
 
 if localPlayer.Character then
@@ -130,17 +162,27 @@ local function optimizeGui(v)
         v.Image = ""
     elseif v:IsA("VideoFrame") then
         v.Video = ""
+    elseif v:IsA("ViewportFrame") then
+        v.CurrentCamera = nil
     end
 end
 
-for _, v in ipairs(localPlayer.PlayerGui:GetDescendants()) do
-    optimizeGui(v)
-end
+task.spawn(function()
+    for _, v in ipairs(localPlayer.PlayerGui:GetDescendants()) do
+        pcall(function()
+            optimizeGui(v)
+        end)
+    end
+end)
 
 localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
-    task.defer(optimizeGui, v)
+    task.defer(function()
+        pcall(function()
+            optimizeGui(v)
+        end)
+    end)
 end)
 
 setfpscap(20)
 
-print("loaded 2")
+print("FPS ok")
