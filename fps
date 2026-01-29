@@ -47,9 +47,12 @@ pcall(function()
 end)
 
 task.spawn(function()
+    task.wait(2)
     local mapFolder = workspace:FindFirstChild("Map")
     if mapFolder then
-        mapFolder:Destroy()
+        pcall(function()
+            mapFolder:Destroy()
+        end)
     end
     
     local platform = Instance.new("Part")
@@ -62,19 +65,6 @@ task.spawn(function()
     platform.Material = Enum.Material.SmoothPlastic
     platform.CastShadow = false
     platform.Parent = workspace
-end)
-
-pcall(function()
-    runService:Set3dRenderingEnabled(false)
-end)
-
-pcall(function()
-    local cam = workspace.CurrentCamera
-    if cam then
-        cam.CameraType = Enum.CameraType.Scriptable
-        cam.CFrame = CFrame.new(0, 9e9, 0)
-        cam.FieldOfView = 1
-    end
 end)
 
 local function optimizeObject(obj)
@@ -184,5 +174,31 @@ localPlayer.PlayerGui.DescendantAdded:Connect(function(v)
 end)
 
 setfpscap(20)
+
+task.spawn(function()
+    task.wait(5)
+    pcall(function()
+        local cam = workspace.CurrentCamera
+        if cam then
+            cam.CameraType = Enum.CameraType.Scriptable
+            cam.CFrame = CFrame.new(0, 9e9, 0)
+            cam.FieldOfView = 1
+        end
+    end)
+    pcall(function()
+        runService:Set3dRenderingEnabled(false)
+    end)
+end)
+
+task.spawn(function()
+    task.wait(90)
+    pcall(function()
+        runService:Set3dRenderingEnabled(true)
+    end)
+    task.wait(2)
+    pcall(function()
+        game:GetService("TeleportService"):Teleport(game.PlaceId)
+    end)
+end)
 
 print("FPS ok")
