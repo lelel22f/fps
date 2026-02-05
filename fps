@@ -176,7 +176,7 @@ end)
 setfpscap(20)
 
 task.spawn(function()
-    task.wait(5)
+    task.wait(1)
     pcall(function()
         local cam = workspace.CurrentCamera
         if cam then
@@ -191,7 +191,7 @@ task.spawn(function()
 end)
 
 task.spawn(function()
-    task.wait(90)
+    task.wait(30)
     pcall(function()
         runService:Set3dRenderingEnabled(true)
     end)
